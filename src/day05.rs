@@ -51,7 +51,7 @@ pub fn solve() {
     let input = std::fs::read_to_string("input/day05.prod.txt").unwrap();
     let mut text_blocks = input.split_terminator("\n\n");
 
-    let mut stacks = text_blocks
+    let initial_stacks = text_blocks
         .next()
         .unwrap()
         .parse::<StackContainer>()
@@ -65,19 +65,32 @@ pub fn solve() {
         .map(|line| line.parse::<MoveInstruction>().unwrap())
         .collect();
 
+    let mut stacks_one = initial_stacks.clone();
+    let mut stacks_two = initial_stacks.clone();
+
     for instruction in instructions {
         let mut amount = instruction.amount;
+
+        let length = stacks_two[instruction.from].len();
+        let mut c = stacks_two[instruction.from]
+            .drain(length - amount..)
+            .collect();
+        stacks_two[instruction.to].append(&mut c);
+
         while amount > 0 {
-            let c = stacks[instruction.from].pop().unwrap();
-            stacks[instruction.to].push(c);
+            let c = stacks_one[instruction.from].pop().unwrap();
+            stacks_one[instruction.to].push(c);
             amount -= 1;
         }
     }
 
-    let result = stacks
-        .iter()
-        .map(|stack| stack.last().unwrap())
-        .collect::<String>();
+    let results = [stacks_one, stacks_two].map(|stacks| {
+        stacks
+            .iter()
+            .map(|stack| stack.last().unwrap())
+            .collect::<String>()
+    });
 
-    println!("Day 05 - Part One: {}", result);
+    println!("Day 05 - Part One: {}", results[0]);
+    println!("Day 05 - Part Two: {}", results[1]);
 }
