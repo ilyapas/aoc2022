@@ -1,178 +1,49 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
-struct File {
-    id: usize,
-    name: String,
-    size: usize,
-}
-
-#[derive(Debug, Clone)]
-struct Directory {
-    id: usize,
-    name: String,
-    size: usize,
-    subdirectories: Vec<usize>,
-    files: Vec<usize>,
-    parent: usize,
-}
-
-#[derive(Debug, Clone)]
-enum Node {
-    Directory(Directory),
-    File(File),
-}
-
-type FileSystem = HashMap<usize, Node>;
-
-fn dir_size(fs: &mut FileSystem, dir: &mut Directory) -> usize {
-    let mut size = 0;
-    for file_id in dir.files.iter() {
-        let file_node = fs.get(file_id).unwrap();
-        if let Node::File(file) = file_node {
-            size += file.size;
-        }
-    }
-    for subdirectory_id in dir.subdirectories.iter_mut() {
-        let mut fs_clone = fs.clone();
-        let subdirectory_node = fs.get_mut(subdirectory_id).unwrap();
-        if let Node::Directory(subdirectory) = subdirectory_node {
-            size += dir_size(&mut fs_clone, subdirectory);
-        }
-    }
-    dir.size = size;
-    size
-}
-
 pub fn solve() {
     let input = std::fs::read_to_string("input/day07.prod.txt").unwrap();
-    let mut fs = FileSystem::new();
-    let mut id: usize = 0;
 
-    fs.insert(
-        id,
-        Node::Directory(Directory {
-            id,
-            name: String::from("/"),
-            size: 0,
-            subdirectories: Vec::new(),
-            files: Vec::new(),
-            parent: 0,
-        }),
-    );
-    let mut current_dir_id = id;
+    let mut dirs = HashMap::<String, usize>::new();
+    let mut current_dir = Vec::<String>::new();
+
     for line in input.lines() {
-        if line.starts_with("$ cd ..") {
-            let current_node = fs.get(&current_dir_id).unwrap();
-            if let Node::Directory(dir) = current_node {
-                current_dir_id = dir.parent;
+        match line.split_whitespace().collect::<Vec<&str>>().as_slice() {
+            ["$", "cd", "/"] => {
+                current_dir.push(String::from("/"));
             }
-        } else if line.starts_with("$ cd ") {
-            let current_node = fs.get(&current_dir_id).unwrap();
-            if let Node::Directory(dir) = current_node {
-                let name = line.split_whitespace().collect::<Vec<&str>>()[2];
-                for subdirectory_id in dir.subdirectories.iter() {
-                    let subdirectory_node = fs.get(subdirectory_id).unwrap();
-                    if let Node::Directory(subdirectory) = subdirectory_node {
-                        if subdirectory.name == name {
-                            current_dir_id = subdirectory.id;
-                            break;
-                        }
-                    }
+            ["$", "cd", ".."] => {
+                current_dir.pop();
+            }
+            ["$", "cd", dir] => {
+                current_dir.push(format!("{}/", dir));
+            }
+            ["$", "ls"] => (),
+            ["dir", _] => (),
+            [size, _] => {
+                let file_size = size.parse::<usize>().unwrap();
+                for (i, _) in current_dir.iter().enumerate() {
+                    let subpath = current_dir[..(i + 1)].join("");
+                    match dirs.get(&subpath) {
+                        Some(size) => dirs.insert(subpath, size + file_size),
+                        None => dirs.insert(subpath, file_size),
+                    };
                 }
             }
-        } else if line.starts_with("dir") {
-            // add new directory
-            let current_node = fs.get_mut(&current_dir_id).unwrap();
-            if let Node::Directory(dir) = current_node {
-                id += 1;
-                let name = line.split_whitespace().collect::<Vec<&str>>()[1];
-                let subdirectories = Vec::new();
-                let files = Vec::new();
-                let size = 0;
-                let parent = dir.id;
-                let new_dir = Directory {
-                    id,
-                    name: name.to_string(),
-                    size,
-                    subdirectories,
-                    files,
-                    parent,
-                };
-                dir.subdirectories.push(id);
-                fs.insert(id, Node::Directory(new_dir));
-            }
-        } else if line != "$ ls" {
-            // add new file to current directory
-            let current_node = fs.get_mut(&current_dir_id).unwrap();
-            if let Node::Directory(dir) = current_node {
-                id += 1;
-                let words = line.split_whitespace().collect::<Vec<&str>>();
-                let size = words[0].parse::<usize>().unwrap();
-                let name = words[1].to_string();
-                let new_file = File { id, name, size };
-                dir.files.push(id);
-                fs.insert(id, Node::File(new_file));
-            }
+            _ => (),
         }
     }
 
-    // calculate size of each directory
-    let mut fs_clone = fs.clone();
-    for (_, node) in fs_clone.iter_mut() {
-        if let Node::Directory(dir) = node {
-            dir_size(&mut fs, dir);
-        }
-    }
+    let result_one: usize = dirs.values().filter(|size| *size < &100000).sum();
 
-    let result_one: usize = fs_clone
-        .iter()
-        .filter(|(_, node)| {
-            if let Node::Directory(dir) = node {
-                dir.size < 100000
-            } else {
-                false
-            }
-        })
-        .map(|(_, node)| {
-            if let Node::Directory(dir) = node {
-                dir.size
-            } else {
-                0
-            }
-        })
-        .sum();
+    let total_used_space = dirs.get("/").unwrap();
+    let required_additional_space = 30000000 - (70000000 - total_used_space);
 
-    let total_space: usize = 70000000;
-    let target_unused_space: usize = 30000000;
-
-    let mut total_used_space: usize = 0;
-    let root_node = fs_clone.get(&0).unwrap();
-    if let Node::Directory(root_dir) = root_node {
-        total_used_space = root_dir.size;
-    }
-
-    let required_additional_space = target_unused_space - (total_space - total_used_space);
-
-    let result_two: usize = fs_clone
-        .iter()
-        .filter(|(_, node)| {
-            if let Node::Directory(dir) = node {
-                dir.size > required_additional_space
-            } else {
-                false
-            }
-        })
-        .map(|(_, node)| {
-            if let Node::Directory(dir) = node {
-                dir.size
-            } else {
-                0
-            }
-        })
+    let result_two: usize = *dirs
+        .values()
+        .filter(|size| *size >= &required_additional_space)
         .min()
         .unwrap();
 
     println!("Day 07 - Part One: {}", result_one);
-    println!("Day 07 - Part Two: {}", result_two);
+    println!("Day 07 - Part Two: {:?}", result_two);
 }
