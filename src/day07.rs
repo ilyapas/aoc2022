@@ -118,13 +118,14 @@ pub fn solve() {
     }
 
     // calculate size of each directory
-    for (_, node) in fs.clone().iter_mut() {
+    let mut fs_clone = fs.clone();
+    for (_, node) in fs_clone.iter_mut() {
         if let Node::Directory(dir) = node {
             dir_size(&mut fs, dir);
         }
     }
 
-    let result: usize = fs
+    let result_one: usize = fs_clone
         .iter()
         .filter(|(_, node)| {
             if let Node::Directory(dir) = node {
@@ -142,5 +143,36 @@ pub fn solve() {
         })
         .sum();
 
-    println!("Day 07 - Part One: {}", result);
+    let total_space: usize = 70000000;
+    let target_unused_space: usize = 30000000;
+
+    let mut total_used_space: usize = 0;
+    let root_node = fs_clone.get(&0).unwrap();
+    if let Node::Directory(root_dir) = root_node {
+        total_used_space = root_dir.size;
+    }
+
+    let required_additional_space = target_unused_space - (total_space - total_used_space);
+
+    let result_two: usize = fs_clone
+        .iter()
+        .filter(|(_, node)| {
+            if let Node::Directory(dir) = node {
+                dir.size > required_additional_space
+            } else {
+                false
+            }
+        })
+        .map(|(_, node)| {
+            if let Node::Directory(dir) = node {
+                dir.size
+            } else {
+                0
+            }
+        })
+        .min()
+        .unwrap();
+
+    println!("Day 07 - Part One: {}", result_one);
+    println!("Day 07 - Part Two: {}", result_two);
 }
