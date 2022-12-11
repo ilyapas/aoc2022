@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Monkey {
     items: VecDeque<usize>,
     operation: fn(usize, usize) -> usize,
@@ -71,35 +71,47 @@ impl FromStr for Monkey {
 pub fn solve() {
     let input = std::fs::read_to_string("input/day11.prod.txt").unwrap();
     let text_blocks = input.split("\n\n").collect::<Vec<&str>>();
-    let mut monkeys = text_blocks
+    let monkeys_start = text_blocks
         .iter()
         .map(|x| x.parse::<Monkey>().unwrap())
         .collect::<Vec<Monkey>>();
-    let mut inspections: Vec<usize> = vec![0; monkeys.len()];
+    let modulo = monkeys_start
+        .iter()
+        .map(|x| x.test_divisor)
+        .product::<usize>();
+    let mut result: Vec<usize> = vec![];
 
-    for round in 0..20 {
-        for i in 0..monkeys.len() {
-            // println!("{:?}", monkeys[i]);
-            while monkeys[i].items.len() > 0 {
-                let mut item = monkeys[i].items.pop_front().unwrap();
-                inspections[i] += 1;
-                let operand = match monkeys[i].operand {
-                    0 => item,
-                    _ => monkeys[i].operand,
-                };
-                item = (monkeys[i].operation)(item, operand);
-                item = item / 3;
-                if item % monkeys[i].test_divisor == 0 {
-                    let index = monkeys[i].test_true_target;
-                    monkeys[index].items.push_back(item);
-                } else {
-                    let index = monkeys[i].test_false_target;
-                    monkeys[index].items.push_back(item);
+    for (part, rounds) in [20, 10000].iter().enumerate() {
+        let mut monkeys = monkeys_start.clone();
+        let mut inspections: Vec<usize> = vec![0; monkeys.len()];
+        for _ in 0..*rounds {
+            for i in 0..monkeys.len() {
+                while monkeys[i].items.len() > 0 {
+                    let mut item = monkeys[i].items.pop_front().unwrap();
+                    inspections[i] += 1;
+                    let operand = match monkeys[i].operand {
+                        0 => item,
+                        _ => monkeys[i].operand,
+                    };
+                    item = (monkeys[i].operation)(item, operand);
+                    if part == 0 {
+                        item = item / 3;
+                    } else {
+                        item = item % modulo;
+                    }
+                    if item % monkeys[i].test_divisor == 0 {
+                        let index = monkeys[i].test_true_target;
+                        monkeys[index].items.push_back(item);
+                    } else {
+                        let index = monkeys[i].test_false_target;
+                        monkeys[index].items.push_back(item);
+                    }
                 }
             }
         }
+        inspections.sort_by(|a, b| b.cmp(a));
+        result.push(inspections.iter().take(2).product::<usize>());
     }
-    inspections.sort_by(|a, b| b.cmp(a));
-    let result_one = inspections.iter().take(2).product::<usize>();
-    println!("Day 11 - Part One: {}", result_one);
+    println!("Day 11 - Part One: {}", result[0]);
+    println!("Day 11 - Part Two: {}", result[1]);
 }
