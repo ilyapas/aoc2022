@@ -46,6 +46,7 @@ fn compare(left: &Value, right: &Value) -> Option<bool> {
 
 pub fn solve() {
     let input = std::fs::read_to_string("input/day13.prod.txt").unwrap();
+
     let text_blocks = input.split("\n\n").collect::<Vec<&str>>();
     let mut result_one = 0;
     for (i, block) in text_blocks.iter().enumerate() {
@@ -56,5 +57,21 @@ pub fn solve() {
             result_one += i + 1;
         }
     }
+
+    let mut input_vec = input.lines().filter(|x| x.len() > 0).collect::<Vec<&str>>();
+    input_vec.push(&"[[2]]");
+    input_vec.push(&"[[6]]");
+    input_vec.sort_by(|a, b| {
+        let left = parse_line(a).unwrap();
+        let right = parse_line(b).unwrap();
+        match compare(&left, &right) {
+            Some(true) => std::cmp::Ordering::Less,
+            _ => std::cmp::Ordering::Greater,
+        }
+    });
+    let result_two = (input_vec.iter().position(|&x| x == "[[6]]").unwrap() + 1)
+        * (input_vec.iter().position(|&x| x == "[[2]]").unwrap() + 1);
+
     println!("Day 13 - Part One: {}", result_one);
+    println!("Day 13 - Part Two: {}", result_two);
 }
