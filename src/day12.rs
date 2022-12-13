@@ -24,53 +24,72 @@ pub fn solve() {
     let mut heights: HashMap<(isize, isize), isize> = HashMap::new();
     let width = input.lines().next().unwrap().len() as isize;
     let height = input.lines().count() as isize;
-    let mut start: (isize, isize) = (0, 0);
+    let mut start_part_one: (isize, isize) = (0, 0);
+    let mut possible_starts: Vec<(isize, isize)> = Vec::new();
     let mut end: (isize, isize) = (0, 0);
     for (row, line) in input.lines().enumerate() {
         for (col, c) in line.chars().enumerate() {
             if c == 'S' {
-                start = (row as isize, col as isize);
+                start_part_one = (row as isize, col as isize);
+                possible_starts.push(start_part_one);
                 heights.insert((row as isize, col as isize), 'a' as isize);
             } else if c == 'E' {
                 end = (row as isize, col as isize);
                 heights.insert((row as isize, col as isize), 'z' as isize);
             } else {
                 heights.insert((row as isize, col as isize), c as isize);
-            }
-        }
-    }
-
-    let mut bfs_queue: VecDeque<(isize, isize)> = VecDeque::new();
-    let mut visited: HashSet<(isize, isize)> = HashSet::new();
-    let mut prev: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
-
-    bfs_queue.push_back(start);
-
-    while bfs_queue.len() > 0 {
-        let current = bfs_queue.pop_front().unwrap();
-        let neighbors = neighbors(current, width, height);
-        for neighbor in neighbors {
-            if heights[&neighbor] - heights[&current] <= 1 {
-                if neighbor == end {
-                    prev.insert(neighbor, current);
-                    break;
-                } else if !visited.contains(&neighbor) {
-                    bfs_queue.push_back(neighbor);
-                    visited.insert(neighbor);
-                    prev.insert(neighbor, current);
+                if c == 'a' {
+                    possible_starts.push((row as isize, col as isize));
                 }
             }
         }
-        visited.insert(current);
     }
 
-    let mut path: Vec<(isize, isize)> = vec![end];
-    let mut current = end;
-    while current != start {
-        let prev = prev[&current];
-        path.push(prev);
-        current = prev;
-    }
+    let mut shortest_path = std::isize::MAX;
+    for start in possible_starts {
+        let mut bfs_queue: VecDeque<(isize, isize)> = VecDeque::new();
+        let mut visited: HashSet<(isize, isize)> = HashSet::new();
+        let mut prev: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
 
-    println!("Day 12 - Part One: {}", path.len() - 1);
+        bfs_queue.push_back(start);
+
+        while bfs_queue.len() > 0 {
+            let current = bfs_queue.pop_front().unwrap();
+            let neighbors = neighbors(current, width, height);
+            for neighbor in neighbors {
+                if heights[&neighbor] - heights[&current] <= 1 {
+                    if neighbor == end {
+                        prev.insert(neighbor, current);
+                        break;
+                    } else if !visited.contains(&neighbor) {
+                        bfs_queue.push_back(neighbor);
+                        visited.insert(neighbor);
+                        prev.insert(neighbor, current);
+                    }
+                }
+            }
+            visited.insert(current);
+        }
+
+        let mut path: Vec<(isize, isize)> = vec![end];
+        let mut current = end;
+        let mut path_valid = true;
+        while current != start {
+            let prev_option = prev.get(&current);
+            if prev_option.is_none() {
+                path_valid = false;
+                break;
+            }
+            path.push(*prev_option.unwrap());
+            current = *prev_option.unwrap();
+        }
+
+        if start == start_part_one {
+            println!("Day 12 - Part One: {}", path.len() - 1);
+        }
+        if path_valid {
+            shortest_path = shortest_path.min(path.len() as isize - 1);
+        }
+    }
+    println!("Day 12 - Part Two: {}", shortest_path);
 }
