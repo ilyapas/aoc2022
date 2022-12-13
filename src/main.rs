@@ -10,6 +10,7 @@ mod day09;
 mod day10;
 mod day11;
 mod day12;
+mod day13;
 
 use crate::day01::solve as day01;
 use crate::day02::solve as day02;
@@ -23,6 +24,7 @@ use crate::day09::solve as day09;
 use crate::day10::solve as day10;
 use crate::day11::solve as day11;
 use crate::day12::solve as day12;
+use crate::day13::solve as day13;
 
 fn main() {
     day01();
@@ -37,4 +39,5 @@ fn main() {
     day10();
     day11();
     day12();
+    day13();
 }
