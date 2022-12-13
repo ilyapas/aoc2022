@@ -46,35 +46,33 @@ pub fn solve() {
     }
 
     let mut shortest_path = std::isize::MAX;
-    for start in possible_starts {
-        let mut bfs_queue: VecDeque<(isize, isize)> = VecDeque::new();
-        let mut visited: HashSet<(isize, isize)> = HashSet::new();
-        let mut prev: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
 
-        bfs_queue.push_back(start);
+    let mut bfs_queue: VecDeque<(isize, isize)> = VecDeque::new();
+    let mut visited: HashSet<(isize, isize)> = HashSet::new();
+    let mut prev: HashMap<(isize, isize), (isize, isize)> = HashMap::new();
 
-        while bfs_queue.len() > 0 {
-            let current = bfs_queue.pop_front().unwrap();
-            let neighbors = neighbors(current, width, height);
-            for neighbor in neighbors {
-                if heights[&neighbor] - heights[&current] <= 1 {
-                    if neighbor == end {
-                        prev.insert(neighbor, current);
-                        break;
-                    } else if !visited.contains(&neighbor) {
-                        bfs_queue.push_back(neighbor);
-                        visited.insert(neighbor);
-                        prev.insert(neighbor, current);
-                    }
+    bfs_queue.push_back(end);
+
+    while bfs_queue.len() > 0 {
+        let current = bfs_queue.pop_front().unwrap();
+        let neighbors = neighbors(current, width, height);
+        for neighbor in neighbors {
+            if heights[&current] - heights[&neighbor] <= 1 {
+                if !visited.contains(&neighbor) {
+                    bfs_queue.push_back(neighbor);
+                    visited.insert(neighbor);
+                    prev.insert(neighbor, current);
                 }
             }
-            visited.insert(current);
         }
+        visited.insert(current);
+    }
 
+    for start in possible_starts {
         let mut path: Vec<(isize, isize)> = vec![end];
-        let mut current = end;
+        let mut current = start;
         let mut path_valid = true;
-        while current != start {
+        while current != end {
             let prev_option = prev.get(&current);
             if prev_option.is_none() {
                 path_valid = false;
@@ -91,5 +89,6 @@ pub fn solve() {
             shortest_path = shortest_path.min(path.len() as isize - 1);
         }
     }
+
     println!("Day 12 - Part Two: {}", shortest_path);
 }
