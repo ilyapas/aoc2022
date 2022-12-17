@@ -52,11 +52,53 @@ pub fn solve() {
         }
     }
 
-    // Dynamic Programming
+    let best = search(&nodes, &flows, &valves, &distances, &30);
+    let result_one = best.values().max().unwrap();
+
+    let best = search(&nodes, &flows, &valves, &distances, &26);
+    let mut result_vec: Vec<isize> = vec![];
+    let mut counter: i64 = 0;
+    best.clone().iter().for_each(|(k1, v1)| {
+        best.iter().for_each(|(k2, v2)| {
+            let mut intersection = false;
+            for i in 0..k1.1.len() {
+                if k2.1.contains(&k1.1[i]) {
+                    intersection = true;
+                    break;
+                }
+            }
+            if !intersection {
+                result_vec.push(*v1 + *v2);
+            }
+            counter += 1;
+            if counter % 10000000 == 0 {
+                println!(
+                    "{} / {} ({}%)",
+                    counter,
+                    best.len() * best.len(),
+                    counter as f64 / (best.len() * best.len()) as f64 * 100.0
+                );
+            }
+        });
+    });
+    let result_two = result_vec.iter().max().unwrap();
+
+    println!("Day 16 - Part One: {}", result_one);
+    println!("Day 16 - Part Two: {}", result_two);
+}
+
+fn search(
+    nodes: &Vec<String>,
+    flows: &Vec<isize>,
+    valves: &Vec<usize>,
+    distances: &Vec<Vec<isize>>,
+    minutes: &isize,
+) -> HashMap<(usize, Vec<usize>, isize), isize> {
     let mut queue: VecDeque<(usize, Vec<usize>, isize, isize)> = VecDeque::new();
     let mut best: HashMap<(usize, Vec<usize>, isize), isize> = HashMap::new();
     let aa = nodes.iter().position(|n| n == "AA").unwrap();
-    queue.push_back((aa, vec![], 30, 0));
+
+    queue.push_back((aa, vec![], *minutes, 0));
     while queue.len() > 0 {
         let (current, open, time, pressure) = queue.pop_front().unwrap();
         if !open.contains(&current) && time >= 1 {
@@ -69,7 +111,7 @@ pub fn solve() {
             }
         }
 
-        for valve in &valves {
+        for valve in valves.iter() {
             if current != *valve {
                 let time_to_move = distances[current][*valve];
                 if time_to_move <= time {
@@ -85,6 +127,5 @@ pub fn solve() {
             }
         }
     }
-
-    println!("Day 16 - Part One: {}", best.values().max().unwrap());
+    best
 }
