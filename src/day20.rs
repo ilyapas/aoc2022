@@ -1,26 +1,31 @@
 pub fn solve() {
     let input = std::fs::read_to_string("input/day20.prod.txt").unwrap();
+    println!("Day 20 - Part One: {}", mix(&input, 1, 1));
+    println!("Day 20 - Part Two: {}", mix(&input, 811589153, 10));
+}
 
+fn mix(input: &str, key: isize, runs: usize) -> isize {
     let encrypted = input
         .lines()
         .map(|line| line.parse::<isize>().unwrap())
+        .map(|i| i * key)
         .collect::<Vec<isize>>();
     let size = encrypted.len() as isize;
     let mut positions: Vec<isize> = (0..size).collect();
-
     let mut decrypted: Vec<isize> = encrypted.clone();
-    for i in 0..size {
-        let item_position = positions.iter().position(|x| *x == i).unwrap() as isize;
-        shift(&mut decrypted, item_position, encrypted[i as usize]);
-        shift(&mut positions, item_position, encrypted[i as usize]);
+
+    for _ in 0..runs {
+        for i in 0..size {
+            let item_position = positions.iter().position(|x| *x == i).unwrap() as isize;
+            shift(&mut decrypted, item_position, encrypted[i as usize]);
+            shift(&mut positions, item_position, encrypted[i as usize]);
+        }
     }
 
     let index_zero = decrypted.iter().position(|x| *x == 0).unwrap() as usize;
-    let result_one = decrypted[(index_zero + 1000) % size as usize]
-        + decrypted[(index_zero + 2000) % size as usize]
-        + decrypted[(index_zero + 3000) % size as usize];
-
-    println!("Day 20 - Part One: {}", result_one);
+    [1000, 2000, 3000].iter().fold(0, |acc, x| {
+        acc + decrypted[(index_zero + x) % size as usize]
+    })
 }
 
 fn shift(vec: &mut Vec<isize>, index: isize, shift: isize) {
