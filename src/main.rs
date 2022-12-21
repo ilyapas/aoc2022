@@ -1,6 +1,6 @@
-mod day20;
-use crate::day20::solve as day20;
+mod day21;
+use crate::day21::solve as day21;
 
 fn main() {
-    day20();
+    day21();
 }
