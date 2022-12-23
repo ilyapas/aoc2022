@@ -31,7 +31,8 @@ pub fn solve() {
 
     let mut options: Vec<VecDeque<&str>> = vec![VecDeque::from(["N", "S", "W", "E"]); elves.len()];
 
-    for _ in 0..10 {
+    let mut round = 0;
+    loop {
         let mut new_elves: Vec<(usize, (isize, isize))> = vec![];
         let mut new_positions: HashSet<(isize, isize)> = HashSet::new();
         let mut blocked_moves: HashSet<(isize, isize)> = HashSet::new();
@@ -68,13 +69,22 @@ pub fn solve() {
             }
             options[i].rotate_left(1);
         }
+        let mut elves_moved = 0;
         new_elves.iter().for_each(|(i, (x, y))| {
             if !blocked_moves.contains(&(*x, *y)) {
                 elves[*i] = (*x, *y);
+                elves_moved += 1;
             }
         });
+        round += 1;
+        if round == 10 {
+            println!("Day 23 - Part One: {}", analyze(&elves));
+        }
+        if elves_moved == 0 {
+            break;
+        }
     }
-    println!("Day 23 - Part One: {}", analyze(&elves));
+    println!("Day 23 - Part Two: {}", round);
 }
 
 fn analyze(elves: &Vec<(isize, isize)>) -> usize {
