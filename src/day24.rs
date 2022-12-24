@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
 struct State {
@@ -56,9 +56,11 @@ pub fn solve() {
 
     let mut time = 0;
     let mut queue: HashSet<(usize, usize)> = HashSet::new();
+    let mut targets = VecDeque::from([finish, start, finish]);
+    let mut results: Vec<usize> = vec![];
 
     queue.insert(start);
-    loop {
+    while !targets.is_empty() {
         time += 1;
         if time == states.len() {
             states.push(update(
@@ -75,7 +77,9 @@ pub fn solve() {
                 let nx = pos.0 as isize + dx;
                 let ny = pos.1 as isize + dy;
                 if nx >= 0
+                    && nx < width as isize
                     && ny >= 0
+                    && ny < height as isize
                     && (state.free[ny as usize][nx as usize]
                         || (nx as usize, ny as usize) == start
                         || (nx as usize, ny as usize) == finish)
@@ -87,11 +91,15 @@ pub fn solve() {
 
         queue = reachable.clone();
 
-        if reachable.contains(&finish) {
-            println!("Day 24 - Part One: {}", time);
-            break;
+        if reachable.contains(&targets[0]) {
+            results.push(time);
+            queue.clear();
+            queue.insert(targets[0]);
+            targets.pop_front();
         }
     }
+    println!("Day 24 - Part One: {}", results[0]);
+    println!("Day 24 - Part Two: {}", results[2]);
 }
 
 fn update(
